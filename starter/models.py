@@ -112,6 +112,8 @@ def run_epoch(G, D, batcher, epoch, config):
 			config.D_optim.zero_grad()
 			D_loss.backward()
 			config.D_optim.step()
+			G.zero_grad()
+			D.zero_grad()
 
 			for param in D.parameters():
 				param.data.clamp_(-config.K, config.K)
@@ -125,8 +127,10 @@ def run_epoch(G, D, batcher, epoch, config):
 		config.G_optim.zero_grad()
 		G_loss.backward()
 		config.G_optim.step()
+		G.zero_grad()
+		D.zero_grad()
 
-		if it % 200 == 0:
+		if it % 100 == 0:
 			print('Epoch - {} | Iteration - {} | D_loss: {} | G_loss: {}'
 				.format(epoch, it, D_loss.data.cpu().numpy(), G_loss.data.cpu().numpy()))
 

@@ -4,7 +4,7 @@ from PIL import Image
 
 class Batcher:
     def __init__(self):
-        self.data_sz = 833
+        self.data_sz = 571
 
     def prepare_data(self, i):
         '''
