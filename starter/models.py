@@ -87,13 +87,13 @@ def build_and_train(config):
 		run_epoch(G, D, batcher, config)
 
 def generate_data(config):
-	z = Variable(torch.randn(config.batch_sz, config.z_dim, 1, 1))
+	z = Variable(torch.randn(config.batch_sz, config.z_dim, 1, 1)).cuda()
 	return z
 
 def process_data(X):
 	X = np.array(X)
 	X = np.transpose(X, [0, 3, 1, 2])
-	X = Variable(torch.from_numpy(X))
+	X = Variable(torch.from_numpy(X)).cuda()
 	return X
 
 # this code adapted from wiseodd's WGAN tutorial
