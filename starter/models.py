@@ -92,7 +92,7 @@ def generate_data(config):
 
 def process_data(X):
 	X = np.array(X)
-	X = np.transpose(X, [0, 3, 1, 2])
+	X = np.transpose(X, [0, 3, 1, 2]).astype(np.float32)
 	X = Variable(torch.from_numpy(X)).cuda()
 	return X
 

@@ -1,0 +1,8 @@
+bs4
+requests
+base64
+scipy
+PIL
+numpy
+torch
+torchvision
