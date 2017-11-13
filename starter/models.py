@@ -86,7 +86,7 @@ def build_and_train(config):
 	for i in range(config.epochs):
 		run_epoch(G, D, batcher, config)
 
-def generate_data():
+def generate_data(config):
 	z = Variable(torch.randn(config.batch_sz, config.z_dim, 1, 1))
 	return z
 
@@ -103,7 +103,7 @@ def run_epoch(G, D, batcher, config):
 	for X in batcher.get_data(config.batch_sz):
 		for i in range(config.d_train):
 			X = process_data(X)
-			z = generate_data()
+			z = generate_data(config)
 
 			G_fake = G(z)
 			D_fake = D(G_fake)
@@ -118,7 +118,7 @@ def run_epoch(G, D, batcher, config):
 			for param in D.parameters():
 				param.data.clamp_(-config.K, config.K)
 
-		z = generate_data()
+		z = generate_data(config)
 		G_fake = G(z)
 		D_fake = D(G_fake)
 
