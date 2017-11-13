@@ -132,7 +132,7 @@ def run_epoch(G, D, batcher, config):
 
 		if it % 10 == 0:
 			print('Iteration - {} | D_loss: {} | G_loss: {}'
-				.format(it, D_loss.data.numpy(), G_loss.data.numpy()))
+				.format(it, D_loss.data.cpu().numpy(), G_loss.data.cpu().numpy()))
 
 			samples = G(z).data.numpy()[:16]
 
