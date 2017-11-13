@@ -78,8 +78,8 @@ def build_and_train(config):
 	G = Generator(config).cuda()
 	D = Discriminator(config).cuda()
 
-	config.G_optim = optim.Adam(G.parameters(), lr=config.lr)
-	config.D_optim = optim.Adam(D.parameters(), lr=config.lr)
+	config.G_optim = optim.RMSprop(G.parameters(), lr=config.lr)
+	config.D_optim = optim.RMSprop(D.parameters(), lr=config.lr)
 
 	batcher = Batcher()
 
@@ -99,10 +99,10 @@ def process_data(X):
 # this code adapted from wiseodd's WGAN tutorial
 # 	https://github.com/wiseodd/generative-models/blob/master/GAN/wasserstein_gan/wgan_pytorch.py
 def run_epoch(G, D, batcher, config):
-	it = 0
-	for X_ in batcher.get_data(config.batch_sz):
-		X = process_data(X_)
+	for it in range(1000):
 		for i in range(config.d_train):
+			X = batcher.get_data(config.batch_sz)
+			X = process_data(X)
 			z = generate_data(config)
 
 			G_fake = G(z)
@@ -127,8 +127,6 @@ def run_epoch(G, D, batcher, config):
 		config.G_optim.zero_grad()
 		G_loss.backward()
 		config.G_optim.step()
-
-		it += 1
 
 		if it % 10 == 0:
 			print('Iteration - {} | D_loss: {} | G_loss: {}'
