@@ -100,9 +100,10 @@ def process_data(X):
 # this code adapted from wiseodd's WGAN tutorial
 # 	https://github.com/wiseodd/generative-models/blob/master/GAN/wasserstein_gan/wgan_pytorch.py
 def run_epoch(G, D, batcher, config):
+	data = batcher.get_data(config.batch_sz)
 	for it in range(1000):
 		for i in range(config.d_train):
-			X = batcher.get_data(config.batch_sz)
+			X = next(data)
 			X = process_data(X)
 			z = generate_data(config)
 
