@@ -131,7 +131,7 @@ def run_epoch(G, D, batcher, config):
 
 		i += 1
 
-		if it % 1000 == 0:
+		if i % 1000 == 0:
 			print('Iteration - {} | D_loss: {} | G_loss: {}'
 				.format(it, D_loss.data.numpy(), G_loss.data.numpy()))
 
