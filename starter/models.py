@@ -99,7 +99,7 @@ def process_data(X):
 # this code adapted from wiseodd's WGAN tutorial
 # 	https://github.com/wiseodd/generative-models/blob/master/GAN/wasserstein_gan/wgan_pytorch.py
 def run_epoch(G, D, batcher, config):
-	i = 0
+	it = 0
 	for X_ in batcher.get_data(config.batch_sz):
 		for i in range(config.d_train):
 			X = process_data(X_)
@@ -128,9 +128,9 @@ def run_epoch(G, D, batcher, config):
 		G_loss.backward()
 		config.G_optim.step()
 
-		i += 1
+		it += 1
 
-		if i % 1000 == 0:
+		if i % 10 == 0:
 			print('Iteration - {} | D_loss: {} | G_loss: {}'
 				.format(it, D_loss.data.numpy(), G_loss.data.numpy()))
 
