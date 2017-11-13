@@ -129,9 +129,8 @@ def run_epoch(G, D, batcher, config):
 		config.G_optim.step()
 
 		it += 1
-		print(it)
 
-		if i % 10 == 0:
+		if it % 10 == 0:
 			print('Iteration - {} | D_loss: {} | G_loss: {}'
 				.format(it, D_loss.data.numpy(), G_loss.data.numpy()))
 
