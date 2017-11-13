@@ -126,7 +126,7 @@ def run_epoch(G, D, batcher, epoch, config):
 		G_loss.backward()
 		config.G_optim.step()
 
-		if it % 1000 == 0:
+		if it % 200 == 0:
 			print('Epoch - {} | Iteration - {} | D_loss: {} | G_loss: {}'
 				.format(epoch, it, D_loss.data.cpu().numpy(), G_loss.data.cpu().numpy()))
 
