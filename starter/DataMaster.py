@@ -24,7 +24,7 @@ class Batcher:
         for i in range(0, self.data_sz):
             xx.append(self.prepare_data(i))
             counter += 1
-            if i % batch_sz == 0:
+            if counter % batch_sz == 0:
                 yield xx
                 xx = []
         if xx != []: yield xx

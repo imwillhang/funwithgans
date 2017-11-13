@@ -101,9 +101,9 @@ def process_data(X):
 # 	https://github.com/wiseodd/generative-models/blob/master/GAN/wasserstein_gan/wgan_pytorch.py
 def run_epoch(G, D, batcher, config):
 	i = 0
-	for X in batcher.get_data(config.batch_sz):
+	for X_ in batcher.get_data(config.batch_sz):
 		for i in range(config.d_train):
-			X = process_data(X)
+			X = process_data(X_)
 			z = generate_data(config)
 
 			G_fake = G(z)
