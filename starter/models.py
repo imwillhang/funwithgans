@@ -39,13 +39,10 @@ class Generator(nn.Module):
 	def __init__(self, config):
 		super(Generator, self).__init__()
 		self.net = nn.Sequential(
-				BasicConvTranspose2d(32, 512, kernel_size=3, stride=2, padding=0),
-				BasicConvTranspose2d(512, 256, kernel_size=3, stride=2, padding=1),
-				BasicConvTranspose2d(256, 128, kernel_size=4, stride=2, padding=1),
-				BasicConvTranspose2d(128, 64, kernel_size=3, stride=2, padding=1),
-				BasicConvTranspose2d(64, 64, kernel_size=3, stride=2, padding=1),
-				BasicConvTranspose2d(64, 64, kernel_size=3, stride=2, padding=1),
-				BasicConvTranspose2d(64, 3, kernel_size=2, stride=1, padding=1),
+				BasicConvTranspose2d(64, 32, kernel_size=4, stride=2, padding=1),
+				BasicConvTranspose2d(32, 16, kernel_size=4, stride=2, padding=1),
+				BasicConvTranspose2d(16, 8, kernel_size=4, stride=2, padding=1),
+				BasicConvTranspose2d(8, 3, kernel_size=3, stride=1, padding=1),
 				nn.Tanh()
 			)
 
@@ -87,12 +84,12 @@ def build_and_train(config):
 		run_epoch(G, D, batcher, i, config)
 
 def generate_data(config):
-	z = Variable(torch.randn(config.batch_sz, config.z_dim, 1, 1)).cuda()
+	z = Variable(torch.randn(config.batch_sz, config.z_dim, 9, 9)).cuda()
 	return z
 
 def process_data(X):
-	X = np.array(X)
 	X = np.transpose(X, [0, 3, 1, 2]).astype(np.float32)
+	X = (X / 255.) * 2 - 1
 	X = Variable(torch.from_numpy(X)).cuda()
 	return X
 

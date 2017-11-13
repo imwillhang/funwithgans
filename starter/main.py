@@ -10,7 +10,7 @@ parser.add_argument('--lr', type=float, nargs = '?', default= 1e-4)
 parser.add_argument('--max_grad_norm', type=float, nargs = '?', default= 5.0)
 parser.add_argument('--reg', type=float, nargs = '?', default= 0.05)
 parser.add_argument('--clip_grad', type=float, nargs = '?', default=5.0)
-parser.add_argument('--z_dim', type=int, nargs = '?', default=32)
+parser.add_argument('--z_dim', type=int, nargs = '?', default=64)
 parser.add_argument('--d_train', type=int, nargs = '?', default=4)
 parser.add_argument('--K', type=float, nargs = '?', default=0.01)
 
