@@ -84,7 +84,7 @@ def build_and_train(config):
 	batcher = Batcher()
 
 	for i in range(config.epochs):
-		run_epoch(G, D, batcher, config)
+		run_epoch(G, D, batcher, i, config)
 
 def generate_data(config):
 	z = Variable(torch.randn(config.batch_sz, config.z_dim, 1, 1)).cuda()
@@ -92,16 +92,15 @@ def generate_data(config):
 
 def process_data(X):
 	X = np.array(X)
-	print(X.shape)
 	X = np.transpose(X, [0, 3, 1, 2]).astype(np.float32)
 	X = Variable(torch.from_numpy(X)).cuda()
 	return X
 
 # this code adapted from wiseodd's WGAN tutorial
 # 	https://github.com/wiseodd/generative-models/blob/master/GAN/wasserstein_gan/wgan_pytorch.py
-def run_epoch(G, D, batcher, config):
+def run_epoch(G, D, batcher, epoch, config):
 	data = batcher.get_data(config.batch_sz)
-	for it in range(1000):
+	for it in range(10000):
 		for i in range(config.d_train):
 			X = next(data)
 			X = process_data(X)
@@ -130,9 +129,9 @@ def run_epoch(G, D, batcher, config):
 		G_loss.backward()
 		config.G_optim.step()
 
-		if it % 10 == 0:
-			print('Iteration - {} | D_loss: {} | G_loss: {}'
-				.format(it, D_loss.data.cpu().numpy(), G_loss.data.cpu().numpy()))
+		if it % 1000 == 0:
+			print('Epoch - {} | Iteration - {} | D_loss: {} | G_loss: {}'
+				.format(epoch, it, D_loss.data.cpu().numpy(), G_loss.data.cpu().numpy()))
 
 			samples = G(z).data.cpu().numpy()[:16]
 

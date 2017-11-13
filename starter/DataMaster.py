@@ -21,7 +21,9 @@ class Batcher:
         '''
         counter = 0
         xx = []
-        for i in range(0, self.data_sz):
+        #for i in range(0, self.data_sz):
+        while True:
+            i = np.random.randint(0, self.data_sz)
             xx.append(self.prepare_data(i))
             counter += 1
             if counter % batch_sz == 0:

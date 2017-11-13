@@ -4,7 +4,7 @@ from models import build_and_train
 
 parser = argparse.ArgumentParser(description='hyperparams', add_help=False)
 parser.add_argument('--epochs', type=int, nargs = '?', default= 150)
-parser.add_argument('--batch_sz', type=int, nargs = '?', default=32)
+parser.add_argument('--batch_sz', type=int, nargs = '?', default=64)
 parser.add_argument('--dropout', type=float, nargs = '?', default= 0.5)
 parser.add_argument('--lr', type=float, nargs = '?', default= 1e-4)
 parser.add_argument('--max_grad_norm', type=float, nargs = '?', default= 5.0)
