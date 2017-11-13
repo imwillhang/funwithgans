@@ -101,8 +101,8 @@ def process_data(X):
 def run_epoch(G, D, batcher, config):
 	it = 0
 	for X_ in batcher.get_data(config.batch_sz):
+		X = process_data(X_)
 		for i in range(config.d_train):
-			X = process_data(X_)
 			z = generate_data(config)
 
 			G_fake = G(z)
@@ -129,6 +129,7 @@ def run_epoch(G, D, batcher, config):
 		config.G_optim.step()
 
 		it += 1
+		print(it)
 
 		if i % 10 == 0:
 			print('Iteration - {} | D_loss: {} | G_loss: {}'
