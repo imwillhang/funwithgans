@@ -134,7 +134,7 @@ def run_epoch(G, D, batcher, config):
 			print('Iteration - {} | D_loss: {} | G_loss: {}'
 				.format(it, D_loss.data.cpu().numpy(), G_loss.data.cpu().numpy()))
 
-			samples = G(z).data.numpy()[:16]
+			samples = G(z).data.cpu().numpy()[:16]
 
 			for i, sample in enumerate(samples):
 				np.save('outputs/{}'.format(i), sample)
