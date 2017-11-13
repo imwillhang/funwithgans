@@ -39,10 +39,14 @@ class Generator(nn.Module):
 	def __init__(self, config):
 		super(Generator, self).__init__()
 		self.net = nn.Sequential(
-				BasicConvTranspose2d(64, 32, kernel_size=4, stride=2, padding=1),
-				BasicConvTranspose2d(32, 16, kernel_size=4, stride=2, padding=1),
-				BasicConvTranspose2d(16, 8, kernel_size=4, stride=2, padding=1),
-				BasicConvTranspose2d(8, 3, kernel_size=3, stride=1, padding=1),
+				BasicConvTranspose2d(64, 32, kernel_size=7, stride=2, padding=1, output_padding=1),
+				BasicConvTranspose2d(32, 32, kernel_size=3, stride=1, padding=1),
+				BasicConvTranspose2d(32, 16, kernel_size=5, stride=2, padding=1, output_padding=1),
+				BasicConvTranspose2d(16, 16, kernel_size=3, stride=1, padding=1),
+				BasicConvTranspose2d(16, 8, kernel_size=3, stride=2, padding=1, output_padding=1),
+				BasicConvTranspose2d(8, 8, kernel_size=3, stride=1, padding=1),
+				BasicConvTranspose2d(8, 4, kernel_size=3, stride=2, padding=1, output_padding=1),
+				BasicConvTranspose2d(4, 3, kernel_size=3, stride=1, padding=1),
 				nn.Tanh()
 			)
 
@@ -84,7 +88,7 @@ def build_and_train(config):
 		run_epoch(G, D, batcher, i, config)
 
 def generate_data(config):
-	z = Variable(torch.randn(config.batch_sz, config.z_dim, 9, 9)).cuda()
+	z = Variable(torch.randn(config.batch_sz, config.z_dim, 2, 2)).cuda()
 	return z
 
 def process_data(X):
