@@ -156,7 +156,7 @@ def build_and_train(config):
 	config.G_optim = optim.RMSprop(G.parameters(), lr=config.lr)
 	config.D_optim = optim.RMSprop(D.parameters(), lr=config.lr)
 
-	train_data = gen_dataset('test')
+	train_data = gen_dataset('train')
 	batcher = get_batch(train_data, 1)
 
 	for i in range(config.epochs):
