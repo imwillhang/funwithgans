@@ -234,9 +234,11 @@ def run_epoch(G, D, batcher, epoch, config):
                 sample = G(X).data.cpu().numpy()
                 reference = y
                 file.write('{}\n'.format(X_sample[0]['sequence']))
+                print('saving file')
                 np.save('outputs/sample_{}'.format(i), sample)
                 np.save('outputs/reference_{}'.format(i), reference)
 
+            file.close()
             torch.save(G, 'models/shit.pth.tar')
 
             # fig = plt.figure(figsize=(4, 4))
