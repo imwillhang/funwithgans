@@ -233,7 +233,7 @@ def run_epoch(G, D, batcher, epoch, config):
                 X, y = process_data(X_sample)
                 sample = G(X).data.cpu().numpy()
                 reference = y
-                file.write('{}\n'.format(X_sample['sequence']))
+                file.write('{}\n'.format(X_sample[0]['sequence']))
                 np.save('outputs/sample_{}'.format(i), sample)
                 np.save('outputs/reference_{}'.format(i), reference)
 
