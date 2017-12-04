@@ -1,2 +1,0 @@
-torch.Size([1, 1, 297, 297])
-torch.Size([1, 32])

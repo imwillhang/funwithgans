@@ -160,7 +160,7 @@ def build_and_train(config):
     config.G_optim = optim.RMSprop(G.parameters(), lr=config.lr)
     config.D_optim = optim.RMSprop(D.parameters(), lr=config.lr)
 
-    train_data = gen_dataset('valid')
+    train_data = gen_dataset('train')
     batcher = get_batch(train_data, 1)
     G_losses, D_losses = [], []
 
@@ -193,9 +193,9 @@ def process_data(X):
 #   https://github.com/wiseodd/generative-models/blob/master/GAN/wasserstein_gan/wgan_pytorch.py
 def run_epoch(G, D, batcher, epoch, config):
     G_losses, D_losses = [], []
-    for it in range(1000):
+    for it in range(200):
         G.train()
-        for i in range(config.d_train):
+        for i in range(2):
             X = next(batcher)
             X, y = process_data(X)
             #z = generate_data(config)
