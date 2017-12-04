@@ -88,10 +88,14 @@ class Generator(nn.Module):
         features = torch.cat(tuple(features))
         features = features.view(-1, features.size()[0])
         proj = self.fc(features)
-        print(proj.size())
         vec1, vec2 = [], []
         hx1, cx1 = Variable(torch.randn(1, self.hidden_sz)), Variable(torch.randn(1, self.hidden_sz))
         hx2, cx2 = Variable(torch.randn(1, self.hidden_sz)), Variable(torch.randn(1, self.hidden_sz))
+        if torch.cuda.is_available():
+            hx1 = hx1.cuda()
+            hx2 = hx2.cuda()
+            cx1 = cx1.cuda()
+            cx2 = cx2.cuda()
         input1, input2 = proj, proj
         for i in range(seqlen):
             hx1, cx1 = self.cm_gen_1(input1, (hx1, cx1))
@@ -156,7 +160,7 @@ def build_and_train(config):
     config.G_optim = optim.RMSprop(G.parameters(), lr=config.lr)
     config.D_optim = optim.RMSprop(D.parameters(), lr=config.lr)
 
-    train_data = gen_dataset('train')
+    train_data = gen_dataset('valid')
     batcher = get_batch(train_data, 1)
 
     for i in range(config.epochs):
@@ -174,7 +178,6 @@ def process_data(X):
     data = [Variable(torch.from_numpy(np.expand_dims(X[key], 1))) for key in ['ACC', 'DISO', 'SS3', 'SS8', 'PSSM', 'PSFM']]
     cm = Variable(torch.from_numpy(X['contactMatrix'].astype(np.float32)))
     cm = cm.view(1, 1, *cm.size())
-    print(cm.size())
     if torch.cuda.is_available():
         data = [d.cuda() for d in data]
         cm = cm.cuda()
