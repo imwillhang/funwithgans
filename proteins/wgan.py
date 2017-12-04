@@ -232,8 +232,8 @@ def run_epoch(G, D, batcher, epoch, config):
             print('Epoch - {} | Iteration - {} | D_loss: {} | G_loss: {}'
                 .format(epoch, it, D_loss.data.cpu().numpy(), G_loss.data.cpu().numpy()))
 
-            G_losses.append(G_loss[0])
-            D_losses.append(D_loss[0])
+            G_losses.append(G_loss.data.cpu().numpy()[0])
+            D_losses.append(D_loss.data.cpu().numpy()[0])
 
             G.eval()
             file = open('metadata.txt', 'w')
