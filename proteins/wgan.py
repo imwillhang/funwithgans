@@ -160,7 +160,7 @@ def build_and_train(config):
     config.G_optim = optim.RMSprop(G.parameters(), lr=config.lr)
     config.D_optim = optim.RMSprop(D.parameters(), lr=config.lr)
 
-    train_data = gen_dataset('train')
+    train_data = gen_dataset('valid')
     batcher = get_batch(train_data, 1)
 
     for i in range(config.epochs):
@@ -227,12 +227,13 @@ def run_epoch(G, D, batcher, epoch, config):
                 .format(epoch, it, D_loss.data.cpu().numpy(), G_loss.data.cpu().numpy()))
 
             G.eval()
-            
-            for i in range(16):
+            file = open('metadata.txt', 'w')
+            for i in range(2):
                 X_sample = next(batcher)
                 X, y = process_data(X_sample)
                 sample = G(X).data.cpu().numpy()
                 reference = y
+                file.write('{}\n'.format(X_sample['sequence']))
                 np.save('outputs/sample_{}'.format(i), sample)
                 np.save('outputs/reference_{}'.format(i), reference)
 
