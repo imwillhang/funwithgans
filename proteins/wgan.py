@@ -192,6 +192,7 @@ def process_data(X):
 # this code adapted from wiseodd's WGAN tutorial
 #   https://github.com/wiseodd/generative-models/blob/master/GAN/wasserstein_gan/wgan_pytorch.py
 def run_epoch(G, D, batcher, epoch, config):
+    G_losses, D_losses = [], []
     for it in range(1000):
         G.train()
         for i in range(config.d_train):
@@ -231,8 +232,8 @@ def run_epoch(G, D, batcher, epoch, config):
             print('Epoch - {} | Iteration - {} | D_loss: {} | G_loss: {}'
                 .format(epoch, it, D_loss.data.cpu().numpy(), G_loss.data.cpu().numpy()))
 
-            G_loss.append(G_loss[0])
-            D_loss.append(D_loss[0])
+            G_losses.append(G_loss[0])
+            D_losses.append(D_loss[0])
 
             G.eval()
             file = open('metadata.txt', 'w')
@@ -247,7 +248,7 @@ def run_epoch(G, D, batcher, epoch, config):
 
             file.close()
 
-    return np.mean(G_loss), np.mean(D_loss)
+    return np.mean(G_losses), np.mean(D_losses)
 
             # fig = plt.figure(figsize=(4, 4))
             # gs = gridspec.GridSpec(4, 4)
