@@ -162,10 +162,16 @@ def build_and_train(config):
 
     train_data = gen_dataset('valid')
     batcher = get_batch(train_data, 1)
+    G_losses, D_losses = [], []
 
     for i in range(config.epochs):
-        run_epoch(G, D, batcher, i, config)
-        save_checkpoint(model)
+        G_loss, D_loss = run_epoch(G, D, batcher, i, config)
+        save_checkpoint(G)
+        G_losses.append(G_loss)
+        D_losses.append(D_loss)
+    np.save('outputs/G_losses', np.array(G_losses))
+    np.save('outputs/D_losses', np.array(D_losses))
+
 
 def generate_data(config):
     z = Variable(torch.randn(config.batch_sz, config.z_dim, 2, 2))
@@ -186,9 +192,8 @@ def process_data(X):
 # this code adapted from wiseodd's WGAN tutorial
 #   https://github.com/wiseodd/generative-models/blob/master/GAN/wasserstein_gan/wgan_pytorch.py
 def run_epoch(G, D, batcher, epoch, config):
-    for it in range(10000):
+    for it in range(1000):
         G.train()
-
         for i in range(config.d_train):
             X = next(batcher)
             X, y = process_data(X)
@@ -226,6 +231,9 @@ def run_epoch(G, D, batcher, epoch, config):
             print('Epoch - {} | Iteration - {} | D_loss: {} | G_loss: {}'
                 .format(epoch, it, D_loss.data.cpu().numpy(), G_loss.data.cpu().numpy()))
 
+            G_loss.append(G_loss[0])
+            D_loss.append(D_loss[0])
+
             G.eval()
             file = open('metadata.txt', 'w')
             for i in range(8):
@@ -238,7 +246,8 @@ def run_epoch(G, D, batcher, epoch, config):
                 np.save('outputs/reference_{}'.format(i), reference)
 
             file.close()
-            torch.save(G, 'models/shit.pth.tar')
+
+    return np.mean(G_loss), np.mean(D_loss)
 
             # fig = plt.figure(figsize=(4, 4))
             # gs = gridspec.GridSpec(4, 4)
