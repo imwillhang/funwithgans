@@ -224,10 +224,16 @@ def run_epoch(G, D, batcher, epoch, config):
 				.format(epoch, it, D_loss.data.cpu().numpy(), G_loss.data.cpu().numpy()))
 
 			G.eval()
-			samples = G(z).data.cpu().numpy()[:16]
+			X = next(batcher)
+			X, y = process_data(X)
+			samples = G(X).data.cpu().numpy()
+			reference = y
 
-			for i, sample in enumerate(samples):
-				np.save('outputs/{}'.format(i), sample)
+			for i in range(len(X)):
+				np.save('outputs/sample_{}'.format(i), samples[i])
+				np.save('outputs/reference_{}'.format(i), reference[i])
+
+		    torch.save(G, 'models/shit.pth.tar')
 
 			# fig = plt.figure(figsize=(4, 4))
 			# gs = gridspec.GridSpec(4, 4)

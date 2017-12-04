@@ -2,7 +2,7 @@
 starter/data/*
 starter/outputs/*
 proteins/data/*
-
+proteins/models/*
 # Byte-compiled / optimized / DLL files
 __pycache__/
 *.py[cod]
