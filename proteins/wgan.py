@@ -227,14 +227,14 @@ def run_epoch(G, D, batcher, epoch, config):
                 .format(epoch, it, D_loss.data.cpu().numpy(), G_loss.data.cpu().numpy()))
 
             G.eval()
-            X = next(batcher)
-            X, y = process_data(X)
-            samples = G(X).data.cpu().numpy()
-            reference = y
-
-            for i in range(len(X)):
-                np.save('outputs/sample_{}'.format(i), samples[i])
-                np.save('outputs/reference_{}'.format(i), reference[i])
+            
+            for i in range(16):
+                X_sample = next(batcher)
+                X, y = process_data(X_sample)
+                sample = G(X).data.cpu().numpy()
+                reference = y
+                np.save('outputs/sample_{}'.format(i), sample)
+                np.save('outputs/reference_{}'.format(i), reference)
 
             torch.save(G, 'models/shit.pth.tar')
 
