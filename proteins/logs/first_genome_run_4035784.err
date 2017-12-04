@@ -1,0 +1,39 @@
+Traceback (most recent call last):
+  File "main.py", line 19, in <module>
+    build_and_train(config)
+  File "/home/users/willhang/funwithgans/proteins/wgan.py", line 163, in build_and_train
+    run_epoch(G, D, batcher, i, config)
+  File "/home/users/willhang/funwithgans/proteins/wgan.py", line 194, in run_epoch
+    G_fake = G(X)
+  File "/home/users/willhang/anaconda3/envs/genome/lib/python3.6/site-packages/torch/nn/modules/module.py", line 224, in __call__
+    result = self.forward(*input, **kwargs)
+  File "/home/users/willhang/funwithgans/proteins/wgan.py", line 97, in forward
+    hx1, cx1 = self.cm_gen_1(input1, (hx1, cx1))
+  File "/home/users/willhang/anaconda3/envs/genome/lib/python3.6/site-packages/torch/nn/modules/module.py", line 224, in __call__
+    result = self.forward(*input, **kwargs)
+  File "/home/users/willhang/anaconda3/envs/genome/lib/python3.6/site-packages/torch/nn/modules/rnn.py", line 608, in forward
+    self.bias_ih, self.bias_hh,
+  File "/home/users/willhang/anaconda3/envs/genome/lib/python3.6/site-packages/torch/nn/_functions/rnn.py", line 26, in LSTMCell
+    hgates = F.linear(hidden[0], w_hh)
+  File "/home/users/willhang/anaconda3/envs/genome/lib/python3.6/site-packages/torch/nn/functional.py", line 555, in linear
+    output = input.matmul(weight.t())
+  File "/home/users/willhang/anaconda3/envs/genome/lib/python3.6/site-packages/torch/autograd/variable.py", line 560, in matmul
+    return torch.matmul(self, other)
+  File "/home/users/willhang/anaconda3/envs/genome/lib/python3.6/site-packages/torch/functional.py", line 173, in matmul
+    return torch.mm(tensor1, tensor2)
+  File "/home/users/willhang/anaconda3/envs/genome/lib/python3.6/site-packages/torch/autograd/variable.py", line 579, in mm
+    return Addmm.apply(output, self, matrix, 0, 1, True)
+  File "/home/users/willhang/anaconda3/envs/genome/lib/python3.6/site-packages/torch/autograd/_functions/blas.py", line 26, in forward
+    matrix1, matrix2, out=output)
+TypeError: torch.addmm received an invalid combination of arguments - got (int, torch.FloatTensor, int, torch.FloatTensor, torch.cuda.FloatTensor, out=torch.FloatTensor), but expected one of:
+ * (torch.FloatTensor source, torch.FloatTensor mat1, torch.FloatTensor mat2, *, torch.FloatTensor out)
+ * (torch.FloatTensor source, torch.SparseFloatTensor mat1, torch.FloatTensor mat2, *, torch.FloatTensor out)
+ * (float beta, torch.FloatTensor source, torch.FloatTensor mat1, torch.FloatTensor mat2, *, torch.FloatTensor out)
+ * (torch.FloatTensor source, float alpha, torch.FloatTensor mat1, torch.FloatTensor mat2, *, torch.FloatTensor out)
+ * (float beta, torch.FloatTensor source, torch.SparseFloatTensor mat1, torch.FloatTensor mat2, *, torch.FloatTensor out)
+ * (torch.FloatTensor source, float alpha, torch.SparseFloatTensor mat1, torch.FloatTensor mat2, *, torch.FloatTensor out)
+ * (float beta, torch.FloatTensor source, float alpha, torch.FloatTensor mat1, torch.FloatTensor mat2, *, torch.FloatTensor out)
+      didn't match because some of the arguments have invalid types: (int, torch.FloatTensor, int, torch.FloatTensor, !torch.cuda.FloatTensor!, out=torch.FloatTensor)
+ * (float beta, torch.FloatTensor source, float alpha, torch.SparseFloatTensor mat1, torch.FloatTensor mat2, *, torch.FloatTensor out)
+      didn't match because some of the arguments have invalid types: (int, torch.FloatTensor, int, !torch.FloatTensor!, !torch.cuda.FloatTensor!, out=torch.FloatTensor)
+
