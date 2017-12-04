@@ -116,9 +116,9 @@ class Discriminator(nn.Module):
         self.hidden_sz = 32
         self.conv_fe = nn.Sequential(
                 BasicConv2d(1, 64, kernel_size=7, stride=3, padding=1),
-                nn.MaxPool2d(kernel_size=2, stride=2),
+                #nn.MaxPool2d(kernel_size=2, stride=2),
                 BasicConv2d(64, 64, kernel_size=5, stride=2, padding=1),
-                nn.MaxPool2d(kernel_size=2, stride=2),
+                #nn.MaxPool2d(kernel_size=2, stride=2),
                 BasicConv2d(64, 64, kernel_size=3, stride=1, padding=1),
             )
         self.disc = nn.LSTM(
@@ -228,13 +228,12 @@ def run_epoch(G, D, batcher, epoch, config):
 
             G.eval()
             file = open('metadata.txt', 'w')
-            for i in range(2):
+            for i in range(8):
                 X_sample = next(batcher)
                 X, y = process_data(X_sample)
                 sample = G(X).data.cpu().numpy()
                 reference = y.data.cpu().numpy()
                 file.write('{}\n'.format(X_sample[0]['sequence']))
-                print('saving file')
                 np.save('outputs/sample_{}'.format(i), sample)
                 np.save('outputs/reference_{}'.format(i), reference)
 
