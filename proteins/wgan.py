@@ -7,7 +7,7 @@ import torch.nn.functional as F
 import torch.optim as optim
 import torchvision as vision
 
-from DataMaster import Batcher
+#from DataMaster import Batcher
 from torch.autograd import Variable
 from torch.nn import init
 
