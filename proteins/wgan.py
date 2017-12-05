@@ -37,6 +37,78 @@ class BasicConv2d(nn.Module):
         x = self.bn(x)
         return F.relu(x, inplace=True)
 
+class Encode(nn.Module):
+    def __init__(self, config, size):
+        super(Encode, self).__init__()
+        self.conv1 = BasicConv2d(1, 16, kernel_size=(5, size), stride=1)
+        self.conv2 = BasicConv2d(16, 16, kernel_size=(5, 1), stride=1)
+        self.conv3 = BasicConv2d(16, 16, kernel_size=(5, 1), stride=1)
+        self.maxpool = nn.MaxPool2d((2, 1), 2, return_indices=True)
+
+    def forward(self, x):
+        indices = []
+        sizes = []
+        layers = [self.conv1, self.conv2, self.conv3]
+        for layer in layers:
+            x = layer(x)
+            sizes.append(x.size())
+            x, idx = self.maxpool(x)
+            indices.append(idx)
+        return x, indices, sizes
+
+class Decode(nn.Module):
+    def __init__(self, config, size):
+        super(Decode, self).__init__()
+        self.conv1 = BasicConvTranspose2d(96, 16, kernel_size=(5, 1), stride=1)
+        self.conv2 = BasicConvTranspose2d(16, 16, kernel_size=(5, 1), stride=1)
+        self.conv3 = BasicConvTranspose2d(16, 1, kernel_size=(5, size), stride=1)
+        self.unpool = nn.MaxUnpool2d((2, 1), 2)
+
+    def forward(self, x, indices, sizes):
+        layers = [self.conv1, self.conv2, self.conv3]
+        indices = indices[::-1]
+        sizes = sizes[::-1]
+        sizes[0] = torch.Size((sizes[0][0], 96, sizes[0][2], sizes[0][3]))
+        indices[0] = torch.cat((indices[0],) * 6, dim=1)
+        for layer, indices_, size in zip(layers, indices, sizes):
+            x = layer(self.unpool(x, indices_, output_size=size))
+        return x
+
+class NonShitGenerator(nn.Module):
+    def __init__(self, config, sizes):
+        super(NonShitGenerator, self).__init__()
+        self.conv_fe = []
+        self.conv_depth = 16
+        for fe_name in sizes:
+            fe_ = Encode(config, sizes[fe_name])
+            self.conv_fe.append(fe_)
+        self.conv_fe = nn.ModuleList(self.conv_fe)
+        self.combobulator = BasicConv2d(self.conv_depth * len(sizes), self.conv_depth, kernel_size=(3, 1), stride=1)
+        self.discombobulator = BasicConvTranspose2d(self.conv_depth, self.conv_depth * len(sizes), kernel_size=(3, 1), stride=1)
+        self.upconv1 = Decode(config, 1)
+        self.upconv2 = Decode(config, 1)
+
+    def forward(self, x):
+        features, indices, sizes = [], None, None
+        seqlen = x[0].size()[0]
+        print(x[0].size())
+        for index, feature in enumerate(x):
+            size = feature.size()
+            feature = feature.view(1, 1, size[0], size[-1])
+            feature, indices, sizes = self.conv_fe[index](feature)
+            features.append(feature)
+        features = torch.cat(tuple(features), dim=1)
+        features = self.combobulator(features)
+        features = self.discombobulator(features)
+        vec1 = self.upconv1(features, indices, sizes)
+        vec2 = self.upconv2(features, indices, sizes)
+        vec1 = vec1.view(vec1.size()[2], 1)
+        vec2 = vec2.view(1, vec2.size()[2])
+        cm = torch.mm(vec1, vec2)
+        cm = cm.view(1, 1, *cm.size())
+        print(cm.size())
+        return cm
+
 class Generator(nn.Module):
     def __init__(self, config, sizes):
         super(Generator, self).__init__()
@@ -150,7 +222,7 @@ def build_and_train(config):
         'PSSM': 20,
         'PSFM': 20
     }
-    G = Generator(config, sizes)
+    G = NonShitGenerator(config, sizes)
     D = Discriminator(config)
 
     if torch.cuda.is_available():
@@ -160,7 +232,7 @@ def build_and_train(config):
     config.G_optim = optim.RMSprop(G.parameters(), lr=config.lr)
     config.D_optim = optim.RMSprop(D.parameters(), lr=config.lr)
 
-    train_data = gen_dataset('train')
+    train_data = gen_dataset('valid')
     batcher = get_batch(train_data, 1)
     G_losses, D_losses = [], []
 
@@ -195,7 +267,7 @@ def run_epoch(G, D, batcher, epoch, config):
     G_losses, D_losses = [], []
     for it in range(200):
         G.train()
-        for i in range(2):
+        for i in range(config.d_train):
             X = next(batcher)
             X, y = process_data(X)
             #z = generate_data(config)
