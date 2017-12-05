@@ -28,6 +28,7 @@ def get_batch(dataset, batchsize, shuffle=True):
         for start in range(0, N - batchsize + 1, batchsize):
             idx_batch = indices[start:start+batchsize]
             if len(dataset[idx_batch[0]]['sequence']) <= 50:
+                print(len(dataset[idx_batch[0]]['sequence']))
                 continue
             batch_data = dataset[idx_batch[0]]
             yield batch_data
