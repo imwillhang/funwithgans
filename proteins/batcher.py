@@ -27,7 +27,7 @@ def get_batch(dataset, batchsize, shuffle=True):
         np.random.shuffle(indices)
         for start in range(0, N - batchsize + 1, batchsize):
             idx_batch = indices[start:start+batchsize]
-            batch_data = [dataset[k] for k in idx_batch if len(dataset[k]['sequence']) >= 40]
+            batch_data = [dataset[k] for k in idx_batch if len(dataset[k]['sequence']) >= 50]
             yield batch_data
 
 if __name__ == '__main__':
