@@ -241,9 +241,8 @@ def build_and_train(config):
         save_checkpoint(G)
         G_losses.append(G_loss)
         D_losses.append(D_loss)
-    np.save('outputs/G_losses', np.array(G_losses))
-    np.save('outputs/D_losses', np.array(D_losses))
-
+        np.save('outputs/G_losses', np.array(G_losses))
+        np.save('outputs/D_losses', np.array(D_losses))
 
 def generate_data(config):
     z = Variable(torch.randn(config.batch_sz, config.z_dim, 2, 2))
@@ -265,7 +264,7 @@ def process_data(X):
 #   https://github.com/wiseodd/generative-models/blob/master/GAN/wasserstein_gan/wgan_pytorch.py
 def run_epoch(G, D, batcher, epoch, config):
     G_losses, D_losses = [], []
-    for it in range(200):
+    for it in range(500):
         G.train()
         for i in range(config.d_train):
             X = next(batcher)
