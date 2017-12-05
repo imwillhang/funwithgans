@@ -264,7 +264,7 @@ def process_data(X):
 #   https://github.com/wiseodd/generative-models/blob/master/GAN/wasserstein_gan/wgan_pytorch.py
 def run_epoch(G, D, batcher, epoch, config):
     G_losses, D_losses = [], []
-    for it in range(500):
+    for it in range(300):
         G.train()
         for i in range(config.d_train):
             X = next(batcher)
