@@ -30,7 +30,7 @@ def get_batch(dataset, batchsize, shuffle=True):
             if len(dataset[idx_batch[0]]['sequence']) <= 50:
                 print(len(dataset[idx_batch[0]]['sequence']))
                 continue
-            batch_data = dataset[idx_batch[0]]
+            batch_data = [dataset[idx_batch[0]]]
             yield batch_data
 
 if __name__ == '__main__':
