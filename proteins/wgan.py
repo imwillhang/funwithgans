@@ -125,6 +125,48 @@ class NonShitGenerator(nn.Module):
         #cm = F.sigmoid(cm)
         return cm
 
+class PlosOne(nn.Module):
+    def __init__(self, config, sizes):
+        super(NIPSGenerator, self).__init__()
+        self.conv_fe = []
+        self.conv_depth = 16
+        for fe_name in sizes:
+            fe_ = Encode(config, sizes[fe_name])
+            self.conv_fe.append(fe_)
+        self.conv_fe = nn.ModuleList(self.conv_fe)
+        self.combobulator = BasicConv2d(self.conv_depth * len(sizes), self.conv_depth, kernel_size=(3, 1), stride=1)
+        self.discombobulator = BasicConvTranspose2d(self.conv_depth, self.conv_depth * len(sizes), kernel_size=(3, 1), stride=1)
+        self.upconv1 = Decode(config, 1)
+        self.upconv2 = Decode(config, 1)
+        self.classifier = nn.Sequential(
+                BasicConv2d(3, 16, kernel_size=9, stride=1),
+                BasicConv2d(16, 16, kernel_size=7, stride=1),
+                BasicConv2d(16, 16, kernel_size=5, stride=1),
+                BasicConv2d(16, 2, kernel_size=3, stride=1)
+            )
+
+    def forward(self, x):
+        features, indices, sizes = [], None, None
+        seqlen = x[0].size()[0]
+        x, spatialfeats = x[:-2], x[-2:]
+        for index, feature in enumerate(x):
+            size = feature.size()
+            feature = feature.view(1, 1, size[0], size[-1])
+            feature, indices, sizes = self.conv_fe[index](feature)
+            features.append(feature)
+        features = torch.cat(tuple(features), dim=1)
+        features = self.combobulator(features)
+        features = self.discombobulator(features)
+        vec1 = self.upconv1(features, indices, sizes)
+        vec2 = self.upconv2(features, indices, sizes)
+        vec1 = vec1.view(vec1.size()[2], 16)
+        vec2 = vec2.view(16, vec2.size()[2])
+        cm = torch.mm(vec1, vec2)
+        cm = cm.view(1, 1, *cm.size())
+        allfeats = torch.cat(tuple(cm) + tuple(spatialfeats), dim=1)
+        cm = self.classifier(allfeats)
+        return cm
+
 # class Generator(nn.Module):
 #     def __init__(self, config, sizes):
 #         super(Generator, self).__init__()
@@ -300,7 +342,7 @@ def process_data(XX):
     XX = XX[-1]
     X = copy.copy(XX)
     X['sequence'] = one_hot_aa_matrix(X['sequence'])
-    data = [Variable(torch.from_numpy(np.expand_dims(X[key], 1))).float() for key in ['ACC', 'DISO', 'SS3', 'SS8', 'PSSM', 'PSFM', 'sequence']]
+    data = [Variable(torch.from_numpy(np.expand_dims(X[key], 1))).float() for key in ['ACC', 'DISO', 'SS3', 'SS8', 'PSSM', 'PSFM', 'sequence', 'ccmpredZ', 'psicovZ']]
     cm = Variable(torch.from_numpy(X['contactMatrix'].astype(np.float32)))
     cm = cm.view(1, 1, *cm.size()) * 100
     if torch.cuda.is_available():
@@ -330,7 +372,7 @@ def run_epoch_(model, config, data, epoch, mode='Train'):
             loss.backward()
             nn.utils.clip_grad_norm(model.parameters(), config.clip_grad)
             config.G_optim.step()    
-            if it % 100 == 0:
+            if it % 500 == 0:
                 print('Epoch {} | Iteration {} | Loss {} | Accuracy {} | LR {}'.
                     format(epoch, it, loss_num, acc, config.lr))
                 print('Sample logits: {}, {}'.format(np.max(logits.data.cpu().numpy()), np.min(logits.data.cpu().numpy())))
