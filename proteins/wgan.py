@@ -88,7 +88,7 @@ def loss_and_acc(config, logits, labels):
     logits = logits.data.cpu().numpy()
     labels = labels.data.cpu().numpy()
     #acc = np.mean((logits >= 0.5) == (labels == 1))
-    rocauc = roc_auc_score(labels.astype(np.uint8), logits)
+    rocauc = roc_auc_score(np.amax(0, labels.squeeze().astype(np.uint8)), logits.squeeze())
     return loss, rocauc
 
 class NonShitGenerator(nn.Module):
