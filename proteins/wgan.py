@@ -10,6 +10,7 @@ import copy
 
 #from DataMaster import Batcher
 from torch.autograd import Variable
+from sklearn.metrics import roc_auc_score
 from torch.nn import init
 
 from batcher import *
@@ -86,8 +87,9 @@ def loss_and_acc(config, logits, labels):
     loss = config.loss(logits, labels)
     logits = logits.data.cpu().numpy()
     labels = labels.data.cpu().numpy()
-    acc = np.mean((logits >= 0.5) == (labels == 1))
-    return loss, acc
+    #acc = np.mean((logits >= 0.5) == (labels == 1))
+    rocauc = roc_auc_score(labels.astype(np.uint8), logits)
+    return loss, rocauc
 
 class NonShitGenerator(nn.Module):
     def __init__(self, config, sizes):
@@ -120,7 +122,7 @@ class NonShitGenerator(nn.Module):
         vec2 = vec2.view(16, vec2.size()[2])
         cm = torch.mm(vec1, vec2)
         cm = cm.view(1, 1, *cm.size())
-        cm = F.sigmoid(cm)
+        #cm = F.sigmoid(cm)
         return cm
 
 # class Generator(nn.Module):
@@ -247,10 +249,10 @@ def build_and_train(config):
     config.G_optim = optim.RMSprop(G.parameters(), lr=config.lr)
     config.D_optim = optim.RMSprop(D.parameters(), lr=config.lr)
 
-    config.loss = nn.BCELoss()
+    config.loss = nn.MSELoss()#BCELoss()
 
-    train_data = gen_dataset('valid')
-    test_data = gen_dataset('valid')
+    train_data = gen_dataset('train')
+    test_data = gen_dataset('test')
 
     if config.mode == 0:
         G_losses, D_losses = [], []
@@ -300,7 +302,7 @@ def process_data(XX):
     X['sequence'] = one_hot_aa_matrix(X['sequence'])
     data = [Variable(torch.from_numpy(np.expand_dims(X[key], 1))).float() for key in ['ACC', 'DISO', 'SS3', 'SS8', 'PSSM', 'PSFM', 'sequence']]
     cm = Variable(torch.from_numpy(X['contactMatrix'].astype(np.float32)))
-    cm = cm.view(1, 1, *cm.size())
+    cm = cm.view(1, 1, *cm.size()) * 100
     if torch.cuda.is_available():
         data = [d.cuda() for d in data]
         cm = cm.cuda()

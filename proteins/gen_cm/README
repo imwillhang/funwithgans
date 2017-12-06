@@ -1,0 +1,12 @@
+To use:
+- Add sequences, one per line, to the sequences.txt file
+
+- Copy reference files and sample files to this directory
+	- every reference file must have a correspondingly named sample file
+		Ex: reference_*.npy goes with sample_*.npy
+
+- No extraneous files
+
+- Run output_cm.py with no arguments
+
+- Outputs will be produced in the ./outputs/ folder in this directory
