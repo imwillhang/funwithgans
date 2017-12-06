@@ -88,7 +88,9 @@ def loss_and_acc(config, logits, labels):
     logits = logits.data.cpu().numpy()
     labels = labels.data.cpu().numpy()
     #acc = np.mean((logits >= 0.5) == (labels == 1))
-    rocauc = roc_auc_score(np.amax(0, labels.squeeze().astype(np.uint8)), logits.squeeze())
+    labels /= 100
+    labels = np.maximum(labels, 0)
+    rocauc = roc_auc_score(labels.squeeze().astype(np.uint8).ravel(), logits.squeeze().ravel())
     return loss, rocauc
 
 class NonShitGenerator(nn.Module):
@@ -240,14 +242,14 @@ def build_and_train(config):
         'sequence': 20
     }
     G = NonShitGenerator(config, sizes)
-    D = Discriminator(config)
+    #D = Discriminator(config)
 
     if torch.cuda.is_available():
         G = G.cuda()
-        D = D.cuda()
+        #D = D.cuda()
 
     config.G_optim = optim.RMSprop(G.parameters(), lr=config.lr)
-    config.D_optim = optim.RMSprop(D.parameters(), lr=config.lr)
+    #config.D_optim = optim.RMSprop(D.parameters(), lr=config.lr)
 
     config.loss = nn.MSELoss()#BCELoss()
 
@@ -330,7 +332,7 @@ def run_epoch_(model, config, data, epoch, mode='Train'):
             loss.backward()
             nn.utils.clip_grad_norm(model.parameters(), config.clip_grad)
             config.G_optim.step()    
-            if it % 100 == 0:
+            if it % 500 == 0:
                 print('Epoch {} | Iteration {} | Loss {} | Accuracy {} | LR {}'.
                     format(epoch, it, loss_num, acc, config.lr))
                 print('Sample logits: {}, {}'.format(np.max(logits.data.cpu().numpy()), np.min(logits.data.cpu().numpy())))
