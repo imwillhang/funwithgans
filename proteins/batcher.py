@@ -22,15 +22,14 @@ def gen_dataset(dataset='test'):
 
 def get_batch(dataset, batchsize, shuffle=True):
     N = len(dataset)
-    while True:
-        indices = list(range(N))
-        np.random.shuffle(indices)
-        for start in range(0, N - batchsize + 1, batchsize):
-            idx_batch = indices[start:start+batchsize]
-            if len(dataset[idx_batch[0]]['sequence']) <= 50:
-                continue
-            batch_data = [dataset[idx_batch[0]]]
-            yield batch_data
+    indices = list(range(N))
+    np.random.shuffle(indices)
+    for start in range(0, N - batchsize + 1, batchsize):
+        idx_batch = indices[start:start+batchsize]
+        if len(dataset[idx_batch[0]]['sequence']) <= 50:
+            continue
+        batch_data = [dataset[idx_batch[0]]]
+        yield batch_data
 
 if __name__ == '__main__':
     dataset = gen_dataset('test') 
