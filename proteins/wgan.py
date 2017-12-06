@@ -27,7 +27,7 @@ class BasicConvTranspose2d(nn.Module):
         x = self.conv(x)
         x = self.dropout(x)
         #x = self.bn(x)
-        return F.elu(x, inplace=True)
+        return F.relu(x, inplace=True)
 
 class BasicConv2d(nn.Module):
     def __init__(self, in_channels, out_channels, **kwargs):
@@ -41,7 +41,7 @@ class BasicConv2d(nn.Module):
         x = self.conv(x)
         x = self.dropout(x)
         #x = self.bn(x)
-        return F.elu(x, inplace=True)
+        return F.relu(x, inplace=True)
 
 class Encode(nn.Module):
     def __init__(self, config, size):
@@ -340,6 +340,7 @@ def run_epoch_(model, config, data, epoch, mode='Train'):
             if it % 100 == 0:
                 np.save('outputs/sample_{}'.format(it // 100), logits.data.cpu().numpy())
                 np.save('outputs/reference_{}'.format(it // 100), labels.data.cpu().numpy())
+                print('Test Sample logits: {}, {}'.format(np.max(logits.data.cpu().numpy()), np.min(logits.data.cpu().numpy())))
         it += 1
     total_loss /= it
     total_acc /= it
