@@ -97,7 +97,8 @@ def loss_and_acc(config, logits, labels):
         labels = labels.data.cpu().numpy()
         labels /= 100
         labels = np.maximum(labels, 0)
-        rocauc = average_precision_score(labels.squeeze().astype(np.uint8).ravel(), logits.squeeze().ravel())
+        apr = average_precision_score(labels.squeeze().astype(np.uint8).ravel(), logits.squeeze().ravel())
+        aucroc = roc_auc_score(labels.squeeze().astype(np.uint8).ravel(), logits.squeeze().ravel())
         #plt.imshow(logits.squeeze())
         #plt.imshow(labels.squeeze())
         #plt.pause(0.1)
@@ -109,10 +110,11 @@ def loss_and_acc(config, logits, labels):
         logits = logits.data.cpu().numpy()
         labels = labels.data.cpu().numpy()
         pred = np.argmax(logits, axis=1)
-        rocauc = average_precision_score(labels.squeeze().astype(np.uint8).ravel(), logits[:, 1, :, :].squeeze().ravel())
+        apr = average_precision_score(labels.squeeze().astype(np.uint8).ravel(), logits[:, 1, :, :].squeeze().ravel())
+        aucroc = roc_auc_score(labels.squeeze().astype(np.uint8).ravel(), logits.squeeze().ravel())
         #plt.imshow(np.argmax(logits[0, :, :, :], axis=0))
         #plt.pause(0.1)
-    return loss, rocauc
+    return loss, apr, aucroc
 
 class NonShitGenerator(nn.Module):
     def __init__(self, config, sizes):
@@ -371,23 +373,27 @@ def build_and_train(config):
             np.save('outputs/D_losses', np.array(D_losses))
 
     if config.mode == 1:
-        train_losses, train_accs = [], []
-        test_losses, test_accs = [], []
-        best_acc = 0.0
+        train_losses, train_aprs, train_aucrocs = [], [], []
+        test_losses, test_aprs, test_aucrocs = [], [], []
+        best_apr = 0.0
         for i in range(config.epochs):
-            train_loss, train_acc = run_epoch_(G, config, train_data, i, mode='Train')
-            test_loss, test_acc = run_epoch_(G, config, test_data, i, mode='Test')
-            if test_acc >= best_acc:
+            train_loss, train_apr, train_aucroc = run_epoch_(G, config, train_data, i, mode='Train')
+            test_loss, test_apr, test_aucroc = run_epoch_(G, config, test_data, i, mode='Test')
+            if test_apr >= best_apr:
                 save_checkpoint(G)
-                best_acc = test_acc
+                best_apr = test_apr
             train_losses.append(train_loss)
-            train_accs.append(train_acc)
+            train_aprs.append(train_apr)
+            train_aucrocs.append(train_aucroc)
             test_losses.append(test_loss)
-            test_accs.append(test_acc)
+            test_aprs.append(test_apr)
+            test_aucrocs.append(test_aucroc)
             np.save('outputs/train_loss_{}'.format(config.loss_func), np.array(train_losses))
-            np.save('outputs/train_acc_{}'.format(config.loss_func), np.array(train_accs))
+            np.save('outputs/train_apr_{}'.format(config.loss_func), np.array(train_aprs))
+            np.save('outputs/train_aucroc_{}'.format(config.loss_func), np.array(train_aucrocs))
             np.save('outputs/test_loss_{}'.format(config.loss_func), np.array(test_losses))
-            np.save('outputs/test_acc_{}'.format(config.loss_func), np.array(test_accs))
+            np.save('outputs/test_apr_{}'.format(config.loss_func), np.array(test_aprs))
+            np.save('outputs/test_aucroc_{}'.format(config.loss_func), np.array(test_aucrocs))
 
 def generate_data(config):
     z = Variable(torch.randn(config.batch_sz, config.z_dim, 2, 2))
@@ -419,7 +425,7 @@ def process_data(XX, mode, config):
     return data, cm
 
 def run_epoch_(model, config, data, epoch, mode='Train'):
-    total_acc, total_loss = 0.0, 0.0
+    total_apr, total_loss, total_aucroc = 0.0, 0.0, 0.0
     all_preds, all_labels, all_logits = [], [], []
     it = 0
     # you need to turn off batch-norm and dropout during Test
@@ -430,10 +436,11 @@ def run_epoch_(model, config, data, epoch, mode='Train'):
     for data in fold:
         X, labels = process_data(data, mode, config)
         logits = model(X)
-        loss, acc = loss_and_acc(config, logits, labels)
+        loss, apr, aucroc = loss_and_acc(config, logits, labels)
         loss_num = loss.data[0]
         total_loss += loss_num
-        total_acc += acc
+        total_apr += apr
+        total_aucroc += aucroc
         if mode == 'Train':
             # perform backprop
             config.G_optim.zero_grad()
@@ -441,8 +448,8 @@ def run_epoch_(model, config, data, epoch, mode='Train'):
             nn.utils.clip_grad_norm(model.parameters(), config.clip_grad)
             config.G_optim.step()    
             if it % 500 == 0:
-                print('Epoch {} | Iteration {} | Loss {} | Accuracy {} | LR {}'.
-                    format(epoch, it, loss_num, acc, config.lr))
+                print('Epoch {} | Iteration {} | Loss {} | APR {} | AUCROC {} | LR {}'.
+                    format(epoch, it, loss_num, apr, aucroc, config.lr))
                 print('Sample logits: {}, {}'.format(np.max(logits.data.cpu().numpy()), np.min(logits.data.cpu().numpy())))
                 sys.stdout.flush()
         else:
@@ -453,10 +460,12 @@ def run_epoch_(model, config, data, epoch, mode='Train'):
                 print('Test Sample logits: {}, {}'.format(np.max(logits.data.cpu().numpy()), np.min(logits.data.cpu().numpy())))
         it += 1
     total_loss /= it
-    total_acc /= it
+    total_apr /= it
+    total_aucroc /= it
     print('{} loss:      {}'.format(mode, total_loss))
-    print('{} accuracy:  {}'.format(mode, total_acc))
-    return total_loss, total_acc
+    print('{} apr:  {}'.format(mode, total_apr))
+    print('{} aucroc:  {}'.format(mode, total_aucroc))
+    return total_loss, total_apr, total_aucroc
 
 # this code adapted from wiseodd's WGAN tutorial
 #   https://github.com/wiseodd/generative-models/blob/master/GAN/wasserstein_gan/wgan_pytorch.py
