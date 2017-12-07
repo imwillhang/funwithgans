@@ -23,7 +23,7 @@ def gen_dataset(dataset='test'):
 def get_batch(dataset, batchsize, shuffle=True):
     N = len(dataset)
     indices = list(range(N))
-    np.random.shuffle(indices)
+    #np.random.shuffle(indices)
     for start in range(0, N - batchsize + 1, batchsize):
         idx_batch = indices[start:start+batchsize]
         if len(dataset[idx_batch[0]]['sequence']) <= 60:

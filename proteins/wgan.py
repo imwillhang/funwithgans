@@ -12,6 +12,8 @@ import copy
 from torch.autograd import Variable
 from sklearn.metrics import roc_auc_score
 from torch.nn import init
+import matplotlib.pyplot as plt
+
 
 from batcher import *
 
@@ -20,13 +22,13 @@ class BasicConvTranspose2d(nn.Module):
         super(BasicConvTranspose2d, self).__init__()
         self.conv = nn.ConvTranspose2d(in_channels, out_channels, bias=False, **kwargs)
         self.dropout = nn.Dropout(0.3)
-        #self.bn = nn.BatchNorm2d(out_channels, eps=0.001)
+        self.bn = nn.BatchNorm2d(out_channels, eps=0.001)
         nn.init.kaiming_uniform(self.conv.weight)
 
     def forward(self, x):
         x = self.conv(x)
-        x = self.dropout(x)
-        #x = self.bn(x)
+        #x = self.dropout(x)
+        x = self.bn(x)
         return F.relu(x, inplace=True)
 
 class BasicConv2d(nn.Module):
@@ -34,13 +36,13 @@ class BasicConv2d(nn.Module):
         super(BasicConv2d, self).__init__()
         self.conv = nn.Conv2d(in_channels, out_channels, bias=False, **kwargs)
         self.dropout = nn.Dropout(0.3)
-        #self.bn = nn.BatchNorm2d(out_channels, eps=0.001)
+        self.bn = nn.BatchNorm2d(out_channels, eps=0.001)
         nn.init.kaiming_uniform(self.conv.weight)
 
     def forward(self, x):
         x = self.conv(x)
-        x = self.dropout(x)
-        #x = self.bn(x)
+        #x = self.dropout(x)
+        x = self.bn(x)
         return F.relu(x, inplace=True)
 
 class Encode(nn.Module):
@@ -84,13 +86,32 @@ class Decode(nn.Module):
 
 def loss_and_acc(config, logits, labels):
     #pred = np.argmax(logits.data.cpu().numpy(), axis=1)
-    loss = config.loss(logits, labels)
-    logits = logits.data.cpu().numpy()
-    labels = labels.data.cpu().numpy()
+    logits = logits.squeeze()
+    labels = labels.squeeze()
+
     #acc = np.mean((logits >= 0.5) == (labels == 1))
-    labels /= 100
-    labels = np.maximum(labels, 0)
-    rocauc = roc_auc_score(labels.squeeze().astype(np.uint8).ravel(), logits.squeeze().ravel())
+    rocauc = None
+    if config.loss_func == 'mse':
+        loss = config.loss(logits, labels)
+        logits = logits.data.cpu().numpy()
+        labels = labels.data.cpu().numpy()
+        labels /= 100
+        labels = np.maximum(labels, 0)
+        rocauc = roc_auc_score(labels.squeeze().astype(np.uint8).ravel(), logits.squeeze().ravel())
+        plt.imshow(logits.squeeze())
+        #plt.imshow(labels.squeeze())
+        plt.pause(0.1)
+    elif config.loss_func == 'ce':
+        logits = logits.view(1, *logits.size())
+        labels = labels.view(1, *labels.size())
+        labels = torch.clamp(labels, min=0).long()
+        loss = config.loss(logits, labels)
+        logits = logits.data.cpu().numpy()
+        labels = labels.data.cpu().numpy()
+        pred = np.argmax(logits, axis=1)
+        rocauc = roc_auc_score(labels.squeeze().astype(np.uint8).ravel(), logits[:, 1, :, :].squeeze().ravel())
+        plt.imshow(np.argmax(logits[0, :, :, :], axis=0))
+        plt.pause(0.1)
     return loss, rocauc
 
 class NonShitGenerator(nn.Module):
@@ -106,45 +127,11 @@ class NonShitGenerator(nn.Module):
         self.discombobulator = BasicConvTranspose2d(self.conv_depth, self.conv_depth * len(sizes), kernel_size=(3, 1), stride=1)
         self.upconv1 = Decode(config, 1)
         self.upconv2 = Decode(config, 1)
-
-    def forward(self, x):
-        features, indices, sizes = [], None, None
-        seqlen = x[0].size()[0]
-        for index, feature in enumerate(x):
-            size = feature.size()
-            feature = feature.view(1, 1, size[0], size[-1])
-            feature, indices, sizes = self.conv_fe[index](feature)
-            features.append(feature)
-        features = torch.cat(tuple(features), dim=1)
-        features = self.combobulator(features)
-        features = self.discombobulator(features)
-        vec1 = self.upconv1(features, indices, sizes)
-        vec2 = self.upconv2(features, indices, sizes)
-        vec1 = vec1.view(vec1.size()[2], 16)
-        vec2 = vec2.view(16, vec2.size()[2])
-        cm = torch.mm(vec1, vec2)
-        cm = cm.view(1, 1, *cm.size())
-        #cm = F.sigmoid(cm)
-        return cm
-
-class PlosOne(nn.Module):
-    def __init__(self, config, sizes):
-        super(NIPSGenerator, self).__init__()
-        self.conv_fe = []
-        self.conv_depth = 16
-        for fe_name in sizes:
-            fe_ = Encode(config, sizes[fe_name])
-            self.conv_fe.append(fe_)
-        self.conv_fe = nn.ModuleList(self.conv_fe)
-        self.combobulator = BasicConv2d(self.conv_depth * len(sizes), self.conv_depth, kernel_size=(3, 1), stride=1)
-        self.discombobulator = BasicConvTranspose2d(self.conv_depth, self.conv_depth * len(sizes), kernel_size=(3, 1), stride=1)
-        self.upconv1 = Decode(config, 1)
-        self.upconv2 = Decode(config, 1)
         self.classifier = nn.Sequential(
-                BasicConv2d(3, 16, kernel_size=9, stride=1),
-                BasicConv2d(16, 16, kernel_size=7, stride=1),
-                BasicConv2d(16, 16, kernel_size=5, stride=1),
-                BasicConv2d(16, 2, kernel_size=3, stride=1)
+                BasicConv2d(3, 16, kernel_size=9, stride=1, padding=4),
+                BasicConv2d(16, 16, kernel_size=7, stride=1, padding=3),
+                BasicConv2d(16, 16, kernel_size=5, stride=1, padding=2),
+                BasicConv2d(16, 1, kernel_size=3, stride=1, padding=1)
             )
 
     def forward(self, x):
@@ -157,17 +144,89 @@ class PlosOne(nn.Module):
             feature, indices, sizes = self.conv_fe[index](feature)
             features.append(feature)
         features = torch.cat(tuple(features), dim=1)
-        features = self.combobulator(features)
-        features = self.discombobulator(features)
+        #features = self.combobulator(features)
+        #features = self.discombobulator(features)
         vec1 = self.upconv1(features, indices, sizes)
         vec2 = self.upconv2(features, indices, sizes)
         vec1 = vec1.view(vec1.size()[2], 16)
         vec2 = vec2.view(16, vec2.size()[2])
         cm = torch.mm(vec1, vec2)
         cm = cm.view(1, 1, *cm.size())
-        allfeats = torch.cat(tuple(cm) + tuple(spatialfeats), dim=1)
-        cm = self.classifier(allfeats)
+        #cm = F.sigmoid(cm)
+        spatialfeats = [feat.squeeze() for feat in spatialfeats]
+        spatialfeats = [feat.view(1, 1, *feat.size()) for feat in spatialfeats]
+        spatialfeats = torch.cat(tuple(cm) + tuple(spatialfeats), dim=1)
+        print(spatialfeats.size())
+        spatialfeats = self.classifier(spatialfeats)
         return cm
+
+class PlosOne(nn.Module):
+    def __init__(self, config, sizes):
+        super(PlosOne, self).__init__()
+        self.conv_fe = []
+        self.conv_depth = 16
+        for fe_name in sizes:
+            fe_ = Encode(config, sizes[fe_name])
+            self.conv_fe.append(fe_)
+        self.conv_fe = nn.ModuleList(self.conv_fe)
+        self.combobulator = BasicConv2d(self.conv_depth * len(sizes), self.conv_depth, kernel_size=(3, 1), stride=1)
+        self.discombobulator = BasicConvTranspose2d(self.conv_depth, self.conv_depth * len(sizes), kernel_size=(3, 1), stride=1)
+        self.upconv1 = Decode(config, 1)
+        self.upconv2 = Decode(config, 1)
+        self.classifier = nn.Sequential(
+                BasicConv2d(2, 64, kernel_size=9, stride=1, padding=4),
+                BasicConv2d(64, 64, kernel_size=7, stride=1, padding=3),
+                BasicConv2d(64, 64, kernel_size=5, stride=1, padding=2),
+                BasicConv2d(64, 1, kernel_size=3, stride=1, padding=1)
+            )
+
+    def forward(self, x):
+        features, indices, sizes = [], None, None
+        seqlen = x[0].size()[0]
+        x, spatialfeats = x[:-2], x[-2:]
+        spatialfeats = [feat.squeeze() for feat in spatialfeats]
+        spatialfeats = [feat.view(1, 1, *feat.size()) for feat in spatialfeats]
+        spatialfeats = torch.cat(tuple(spatialfeats), dim=1)
+        spatialfeats = self.classifier(spatialfeats)
+        print(seqlen, spatialfeats.size())
+        return spatialfeats
+
+class RecurrentProtein(nn.Module):
+    def __init__(self, config, sizes):
+        super(RecurrentProtein, self).__init__()
+        self.recurrent = nn.GRU(
+                input_size=sum(sizes.values()),
+                hidden_size=16,
+                num_layers=3,
+                dropout=0.3,
+                bidirectional=True
+            )
+        output_channels = 1 if config.loss_func == 'mse' else 2
+        self.classifier = nn.Sequential(
+                BasicConv2d(3, 64, kernel_size=9, stride=1, padding=4),
+                BasicConv2d(64, 64, kernel_size=7, stride=1, padding=3),
+                BasicConv2d(64, 64, kernel_size=5, stride=1, padding=2),
+                BasicConv2d(64, output_channels, kernel_size=3, stride=1, padding=1)
+            )
+        self.softmax = None if config.loss_func == 'mse' else nn.LogSoftmax()
+
+    def forward(self, x):
+        features, indices, sizes = [], None, None
+        seqlen = x[0].size()[0]
+        seqfeats, spatialfeats = x[:-2], x[-2:]
+        seqfeats = torch.cat(tuple(seqfeats), dim=1)
+        seqfeats = seqfeats.unsqueeze(1)
+        seqfeats, _ = self.recurrent(seqfeats)
+        seqfeats = seqfeats.squeeze()
+        seqfeats = torch.mm(seqfeats, seqfeats.transpose(0, 1)).squeeze()
+        seqfeats = seqfeats.view(1, 1, 1, *seqfeats.size()) # <-- what the fuck?????
+        spatialfeats = [feat.squeeze() for feat in spatialfeats]
+        spatialfeats = [feat.view(1, 1, *feat.size()) for feat in spatialfeats]
+        allfeats = torch.cat(tuple(spatialfeats) + tuple(seqfeats), dim=1)
+        allfeats = self.classifier(allfeats)
+        if self.softmax:
+            allfeats = self.softmax(allfeats)
+        return allfeats
 
 # class Generator(nn.Module):
 #     def __init__(self, config, sizes):
@@ -283,17 +342,21 @@ def build_and_train(config):
         'PSFM': 20,
         'sequence': 20
     }
-    G = NonShitGenerator(config, sizes)
+    G = RecurrentProtein(config, sizes)
+    #G = NonShitGenerator(config, sizes)
     #D = Discriminator(config)
 
     if torch.cuda.is_available():
         G = G.cuda()
         #D = D.cuda()
 
-    config.G_optim = optim.RMSprop(G.parameters(), lr=config.lr)
+    config.G_optim = optim.Adam(G.parameters(), lr=config.lr)
     #config.D_optim = optim.RMSprop(D.parameters(), lr=config.lr)
 
-    config.loss = nn.MSELoss()#BCELoss()
+    if config.loss_func == 'mse':
+        config.loss = nn.MSELoss()
+    elif config.loss_func == 'ce':
+        config.loss = nn.NLLLoss2d()
 
     train_data = gen_dataset('train')
     test_data = gen_dataset('test')
@@ -322,10 +385,10 @@ def build_and_train(config):
             train_accs.append(train_acc)
             test_losses.append(test_loss)
             test_accs.append(test_acc)
-            np.save('outputs/train_loss', np.array(train_losses))
-            np.save('outputs/train_acc', np.array(train_accs))
-            np.save('outputs/test_loss', np.array(test_losses))
-            np.save('outputs/test_acc', np.array(test_accs))
+            np.save('outputs/train_loss_{}'.format(config.loss_func), np.array(train_losses))
+            np.save('outputs/train_acc_{}'.format(config.loss_func), np.array(train_accs))
+            np.save('outputs/test_loss_{}'.format(config.loss_func), np.array(test_losses))
+            np.save('outputs/test_acc_{}'.format(config.loss_func), np.array(test_accs))
 
 def generate_data(config):
     z = Variable(torch.randn(config.batch_sz, config.z_dim, 2, 2))
@@ -340,13 +403,17 @@ def one_hot_aa_matrix(mat):
         output_mat[i,amino_acids.index(mat[i])] = 1.
     return output_mat
 
-def process_data(XX):
+def process_data(XX, mode, config):
     XX = XX[-1]
     X = copy.copy(XX)
     X['sequence'] = one_hot_aa_matrix(X['sequence'])
-    data = [Variable(torch.from_numpy(np.expand_dims(X[key], 1))).float() for key in ['ACC', 'DISO', 'SS3', 'SS8', 'PSSM', 'PSFM', 'sequence', 'ccmpredZ', 'psicovZ']]
-    cm = Variable(torch.from_numpy(X['contactMatrix'].astype(np.float32)))
-    cm = cm.view(1, 1, *cm.size()) * 100
+    #data = [Variable(torch.from_numpy(np.expand_dims(X[key], 1).astype(np.float32)), volatile=mode is not 'Train').float() for key in ['ACC', 'DISO', 'SS3', 'SS8', 'PSSM', 'PSFM', 'sequence', 'ccmpredZ', 'psicovZ']]
+    data = [Variable(torch.from_numpy(X[key].astype(np.float32)), volatile=mode is not 'Train').float() for key in ['ACC', 'DISO', 'SS3', 'SS8', 'PSSM', 'PSFM', 'sequence', 'ccmpredZ', 'psicovZ']]
+    cm = Variable(torch.from_numpy(X['contactMatrix'].astype(np.float32)), volatile=mode is not 'Train')
+    if config.loss_func == 'mse':
+        cm = cm.view(1, 1, *cm.size()) * 100
+    elif config.loss_func == 'ce':
+        cm = cm.view(1, 1, *cm.size())
     if torch.cuda.is_available():
         data = [d.cuda() for d in data]
         cm = cm.cuda()
@@ -362,7 +429,7 @@ def run_epoch_(model, config, data, epoch, mode='Train'):
     # iterate over the dataset
     fold = get_batch(data, 1)
     for data in fold:
-        X, labels = process_data(data)
+        X, labels = process_data(data, mode, config)
         logits = model(X)
         loss, acc = loss_and_acc(config, logits, labels)
         loss_num = loss.data[0]
@@ -382,8 +449,8 @@ def run_epoch_(model, config, data, epoch, mode='Train'):
         else:
             # record data for precision/recall calculations
             if it % 100 == 0:
-                np.save('outputs/sample_{}'.format(it // 100), logits.data.cpu().numpy())
-                np.save('outputs/reference_{}'.format(it // 100), labels.data.cpu().numpy())
+                np.save('outputs/sample_{}_{}'.format(it // 100, config.loss_func), logits.data.cpu().numpy())
+                np.save('outputs/reference_{}_{}'.format(it // 100, config.loss_func), labels.data.cpu().numpy())
                 print('Test Sample logits: {}, {}'.format(np.max(logits.data.cpu().numpy()), np.min(logits.data.cpu().numpy())))
         it += 1
     total_loss /= it
