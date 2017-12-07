@@ -98,9 +98,9 @@ def loss_and_acc(config, logits, labels):
         labels /= 100
         labels = np.maximum(labels, 0)
         rocauc = roc_auc_score(labels.squeeze().astype(np.uint8).ravel(), logits.squeeze().ravel())
-        plt.imshow(logits.squeeze())
+        #plt.imshow(logits.squeeze())
         #plt.imshow(labels.squeeze())
-        plt.pause(0.1)
+        #plt.pause(0.1)
     elif config.loss_func == 'ce':
         logits = logits.view(1, *logits.size())
         labels = labels.view(1, *labels.size())
@@ -110,8 +110,8 @@ def loss_and_acc(config, logits, labels):
         labels = labels.data.cpu().numpy()
         pred = np.argmax(logits, axis=1)
         rocauc = roc_auc_score(labels.squeeze().astype(np.uint8).ravel(), logits[:, 1, :, :].squeeze().ravel())
-        plt.imshow(np.argmax(logits[0, :, :, :], axis=0))
-        plt.pause(0.1)
+        #plt.imshow(np.argmax(logits[0, :, :, :], axis=0))
+        #plt.pause(0.1)
     return loss, rocauc
 
 class NonShitGenerator(nn.Module):
