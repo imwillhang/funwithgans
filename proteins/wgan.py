@@ -111,7 +111,7 @@ def loss_and_acc(config, logits, labels):
         labels = labels.data.cpu().numpy()
         pred = np.argmax(logits, axis=1)
         apr = average_precision_score(labels.squeeze().astype(np.uint8).ravel(), logits[:, 1, :, :].squeeze().ravel())
-        aucroc = roc_auc_score(labels.squeeze().astype(np.uint8).ravel(), logits.squeeze().ravel())
+        aucroc = roc_auc_score(labels.squeeze().astype(np.uint8).ravel(), logits[:, 1, :, :].squeeze().ravel())
         #plt.imshow(np.argmax(logits[0, :, :, :], axis=0))
         #plt.pause(0.1)
     return loss, apr, aucroc
