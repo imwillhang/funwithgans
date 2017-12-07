@@ -10,7 +10,7 @@ import copy
 
 #from DataMaster import Batcher
 from torch.autograd import Variable
-from sklearn.metrics import roc_auc_score
+from sklearn.metrics import roc_auc_score, average_precision_score
 from torch.nn import init
 import matplotlib.pyplot as plt
 
@@ -97,7 +97,7 @@ def loss_and_acc(config, logits, labels):
         labels = labels.data.cpu().numpy()
         labels /= 100
         labels = np.maximum(labels, 0)
-        rocauc = roc_auc_score(labels.squeeze().astype(np.uint8).ravel(), logits.squeeze().ravel())
+        rocauc = average_precision_score(labels.squeeze().astype(np.uint8).ravel(), logits.squeeze().ravel())
         #plt.imshow(logits.squeeze())
         #plt.imshow(labels.squeeze())
         #plt.pause(0.1)
@@ -109,7 +109,7 @@ def loss_and_acc(config, logits, labels):
         logits = logits.data.cpu().numpy()
         labels = labels.data.cpu().numpy()
         pred = np.argmax(logits, axis=1)
-        rocauc = roc_auc_score(labels.squeeze().astype(np.uint8).ravel(), logits[:, 1, :, :].squeeze().ravel())
+        rocauc = average_precision_score(labels.squeeze().astype(np.uint8).ravel(), logits[:, 1, :, :].squeeze().ravel())
         #plt.imshow(np.argmax(logits[0, :, :, :], axis=0))
         #plt.pause(0.1)
     return loss, rocauc
@@ -156,7 +156,6 @@ class NonShitGenerator(nn.Module):
         spatialfeats = [feat.squeeze() for feat in spatialfeats]
         spatialfeats = [feat.view(1, 1, *feat.size()) for feat in spatialfeats]
         spatialfeats = torch.cat(tuple(cm) + tuple(spatialfeats), dim=1)
-        print(spatialfeats.size())
         spatialfeats = self.classifier(spatialfeats)
         return cm
 
