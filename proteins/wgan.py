@@ -359,7 +359,7 @@ def build_and_train(config):
     elif config.loss_func == 'ce':
         config.loss = nn.NLLLoss2d()
 
-    train_data = gen_dataset('train')
+    train_data = gen_dataset('valid')
     test_data = gen_dataset('test')
 
     if config.mode == 0:
@@ -388,12 +388,12 @@ def build_and_train(config):
             test_losses.append(test_loss)
             test_aprs.append(test_apr)
             test_aucrocs.append(test_aucroc)
-            np.save('outputs/train_loss_{}'.format(config.loss_func), np.array(train_losses))
-            np.save('outputs/train_apr_{}'.format(config.loss_func), np.array(train_aprs))
-            np.save('outputs/train_aucroc_{}'.format(config.loss_func), np.array(train_aucrocs))
-            np.save('outputs/test_loss_{}'.format(config.loss_func), np.array(test_losses))
-            np.save('outputs/test_apr_{}'.format(config.loss_func), np.array(test_aprs))
-            np.save('outputs/test_aucroc_{}'.format(config.loss_func), np.array(test_aucrocs))
+            #np.save('outputs/train_loss_{}'.format(config.loss_func), np.array(train_losses))
+            #np.save('outputs/train_apr_{}'.format(config.loss_func), np.array(train_aprs))
+            #np.save('outputs/train_aucroc_{}'.format(config.loss_func), np.array(train_aucrocs))
+            #np.save('outputs/test_loss_{}'.format(config.loss_func), np.array(test_losses))
+            #np.save('outputs/test_apr_{}'.format(config.loss_func), np.array(test_aprs))
+            #np.save('outputs/test_aucroc_{}'.format(config.loss_func), np.array(test_aucrocs))
 
 def generate_data(config):
     z = Variable(torch.randn(config.batch_sz, config.z_dim, 2, 2))
@@ -411,6 +411,7 @@ def one_hot_aa_matrix(mat):
 def process_data(XX, mode, config):
     XX = XX[-1]
     X = copy.copy(XX)
+    alpha_seq = X['sequence']
     X['sequence'] = one_hot_aa_matrix(X['sequence'])
     #data = [Variable(torch.from_numpy(np.expand_dims(X[key], 1).astype(np.float32)), volatile=mode is not 'Train').float() for key in ['ACC', 'DISO', 'SS3', 'SS8', 'PSSM', 'PSFM', 'sequence', 'ccmpredZ', 'psicovZ']]
     data = [Variable(torch.from_numpy(X[key].astype(np.float32)), volatile=mode is not 'Train').float() for key in ['ACC', 'DISO', 'SS3', 'SS8', 'PSSM', 'PSFM', 'sequence', 'ccmpredZ', 'psicovZ']]
@@ -422,7 +423,7 @@ def process_data(XX, mode, config):
     if torch.cuda.is_available():
         data = [d.cuda() for d in data]
         cm = cm.cuda()
-    return data, cm
+    return data, cm, alpha_seq
 
 def run_epoch_(model, config, data, epoch, mode='Train'):
     total_apr, total_loss, total_aucroc = 0.0, 0.0, 0.0
@@ -434,7 +435,7 @@ def run_epoch_(model, config, data, epoch, mode='Train'):
     # iterate over the dataset
     fold = get_batch(data, 1)
     for data in fold:
-        X, labels = process_data(data, mode, config)
+        X, labels, alpha_seq = process_data(data, mode, config)
         logits = model(X)
         loss, apr, aucroc = loss_and_acc(config, logits, labels)
         loss_num = loss.data[0]
@@ -455,8 +456,9 @@ def run_epoch_(model, config, data, epoch, mode='Train'):
         else:
             # record data for precision/recall calculations
             if it % 100 == 0:
-                np.save('outputs/sample_{}_{}'.format(it // 100, config.loss_func), logits.data.cpu().numpy())
-                np.save('outputs/reference_{}_{}'.format(it // 100, config.loss_func), labels.data.cpu().numpy())
+                #np.save('outputs/sample_{}_{}'.format(it // 100, config.loss_func), logits.data.cpu().numpy())
+                #np.save('outputs/reference_{}_{}'.format(it // 100, config.loss_func), labels.data.cpu().numpy())
+                protein = open('outputs/protein_{}'.format(it // 100), 'w').write(alpha_seq).close()
                 print('Test Sample logits: {}, {}'.format(np.max(logits.data.cpu().numpy()), np.min(logits.data.cpu().numpy())))
         it += 1
     total_loss /= it
