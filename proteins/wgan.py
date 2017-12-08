@@ -458,7 +458,9 @@ def run_epoch_(model, config, data, epoch, mode='Train'):
             if it % 100 == 0:
                 #np.save('outputs/sample_{}_{}'.format(it // 100, config.loss_func), logits.data.cpu().numpy())
                 #np.save('outputs/reference_{}_{}'.format(it // 100, config.loss_func), labels.data.cpu().numpy())
-                protein = open('outputs/protein_{}'.format(it // 100), 'w').write(alpha_seq).close()
+                protein = open('outputs/protein_{}'.format(it // 100), 'w')
+                protein.write(alpha_seq)
+                protein.close()
                 print('Test Sample logits: {}, {}'.format(np.max(logits.data.cpu().numpy()), np.min(logits.data.cpu().numpy())))
         it += 1
     total_loss /= it
